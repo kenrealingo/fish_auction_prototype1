@@ -1,0 +1,102 @@
+# Fish Auction System - Docker Compose Configuration
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: fish-auction-db
+    environment:
+      POSTGRES_USER: fish_auction_user
+      POSTGRES_PASSWORD: secure_password_change_in_production
+      POSTGRES_DB: fish_auction_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./prisma/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - fish-auction-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fish_auction_user -d fish_auction_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (Optional - for session storage and caching)
+  redis:
+    image: redis:7-alpine
+    container_name: fish-auction-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - fish-auction-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Fish Auction Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fish-auction-app
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://fish_auction_user:secure_password_change_in_production@postgres:5432/fish_auction_db
+      NEXTAUTH_SECRET: your-super-secure-nextauth-secret-key-change-in-production
+      NEXTAUTH_URL: http://localhost:3000
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - fish-auction-network
+    volumes:
+      - app_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Nginx Reverse Proxy (Optional - for SSL termination and load balancing)
+  nginx:
+    image: nginx:alpine
+    container_name: fish-auction-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - fish-auction-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  app_logs:
+    driver: local
+  nginx_logs:
+    driver: local
+
+networks:
+  fish-auction-network:
+    driver: bridge

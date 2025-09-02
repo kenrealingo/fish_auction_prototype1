@@ -1,0 +1,31 @@
+# Docker Compose override for development
+# This file is automatically used when running docker-compose up in development
+version: '3.8'
+
+services:
+  app:
+    build:
+      target: base
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://fish_auction_user:secure_password_change_in_production@postgres:5432/fish_auction_db
+      NEXTAUTH_SECRET: development-secret-key-not-for-production
+      NEXTAUTH_URL: http://localhost:3000
+    volumes:
+      # Mount source code for hot reloading
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Debug port
+
+  # Remove nginx in development
+  nginx:
+    profiles: ["production"]
+
+  # Expose database port for development tools
+  postgres:
+    ports:
+      - "5432:5432"

@@ -1,0 +1,486 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Enums
+enum UserRole {
+  BROKER
+  SUPPLIER
+  BUYER
+}
+
+enum AuctionStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum LotStatus {
+  AVAILABLE
+  IN_AUCTION
+  SOLD
+  UNSOLD
+  WITHDRAWN
+  PENDING_SUPPLIER_APPROVAL
+}
+
+enum TransactionType {
+  SALE
+  COMMISSION
+  LABOR_FEE
+}
+
+enum SettlementStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum AuditEventType {
+  LOT_CREATED
+  LOT_UPDATED  
+  LOT_DELETED
+  AUCTION_STARTED
+  AUCTION_CLOSED
+  AUCTION_CANCELLED
+  BID_PLACED
+  BID_WITHDRAWN
+  TRANSACTION_CREATED
+  TRANSACTION_UPDATED
+  SETTLEMENT_CREATED
+  SETTLEMENT_COMPLETED
+  USER_CREATED
+  USER_UPDATED
+  USER_DELETED
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  PERMISSION_DENIED
+}
+
+// NextAuth.js Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+// Core Fish Auction Models
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  password      String?   // For credentials provider
+  role          UserRole  @default(BROKER)
+  
+  // Business fields
+  businessName  String?
+  phone         String?
+  address       String?
+  taxId         String?   // Tax identification number
+  bankAccount   String?   // Bank account for settlements
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // NextAuth relations
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Business relations
+  supplier      Supplier? @relation("SupplierUser")
+  buyer         Buyer?    @relation("BuyerUser")
+  buyerBids     Bid[]     @relation("BuyerBids")
+  transactions  Transaction[]
+  settlements   Settlement[]
+  dailyReports  DailyReport[]
+
+  // Audit relations - createdBy/updatedBy
+  suppliersCreated    Supplier[]   @relation("SupplierCreatedBy")
+  suppliersUpdated    Supplier[]   @relation("SupplierUpdatedBy")
+  buyersCreated       Buyer[]      @relation("BuyerCreatedBy")
+  buyersUpdated       Buyer[]      @relation("BuyerUpdatedBy")
+  lotsCreated         CatchLot[]   @relation("LotCreatedBy")
+  lotsUpdated         CatchLot[]   @relation("LotUpdatedBy")
+  auctionsCreated     Auction[]    @relation("AuctionCreatedBy")
+  auctionsUpdated     Auction[]    @relation("AuctionUpdatedBy")
+  transactionsCreated Transaction[] @relation("TransactionCreatedBy")
+  transactionsUpdated Transaction[] @relation("TransactionUpdatedBy")
+  
+  // Audit events
+  auditEventsPerformed AuditEvent[] @relation("AuditEventPerformedBy")
+  auditEventsAffecting AuditEvent[] @relation("AuditEventAffectedUser")
+
+  @@index([role])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Supplier {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation("SupplierUser", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Supplier-specific fields
+  licenseNumber String? @unique
+  vesselName    String?
+  vesselNumber  String? @unique
+  fishingArea   String?
+  
+  // Audit fields
+  createdBy     String?
+  createdByUser User?    @relation("SupplierCreatedBy", fields: [createdBy], references: [id])
+  updatedBy     String?
+  updatedByUser User?    @relation("SupplierUpdatedBy", fields: [updatedBy], references: [id])
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  lots          CatchLot[]
+
+  @@index([licenseNumber])
+  @@index([createdAt])
+  @@map("suppliers")
+}
+
+model Buyer {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation("BuyerUser", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Buyer-specific fields
+  buyerType    String?  // e.g., "RESTAURANT", "RETAILER", "WHOLESALER"
+  creditLimit  Int?     // Credit limit in centavos
+  
+  // Audit fields
+  createdBy     String?
+  createdByUser User?    @relation("BuyerCreatedBy", fields: [createdBy], references: [id])
+  updatedBy     String?
+  updatedByUser User?    @relation("BuyerUpdatedBy", fields: [updatedBy], references: [id])
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  bids         Bid[]
+
+  @@index([buyerType])
+  @@index([createdAt])
+  @@map("buyers")
+}
+
+model CatchLot {
+  id           String    @id @default(cuid())
+  lotNumber    String    @unique // e.g., "LOT-20250901-001"
+  
+  // Supplier info
+  supplierId   String
+  supplier     Supplier  @relation(fields: [supplierId], references: [id])
+  
+  // Fish details
+  fishType     String    // e.g., "Tuna", "Salmon", "Mackerel"
+  fishSpecies  String?   // Scientific name if available
+  weight       Float     // Weight in kilograms
+  grade        String?   // Quality grade A, B, C
+  freshness    String?   // Fresh, Frozen, etc.
+  origin       String?   // Fishing area or farm origin
+  
+  // Lot details
+  status       LotStatus @default(AVAILABLE)
+  reservePrice Int?      // Minimum price in centavos
+  description  String?   // Additional notes
+  
+  // Audit fields
+  createdBy     String?
+  createdByUser User?     @relation("LotCreatedBy", fields: [createdBy], references: [id])
+  updatedBy     String?
+  updatedByUser User?     @relation("LotUpdatedBy", fields: [updatedBy], references: [id])
+  
+  // Timestamps
+  caughtAt     DateTime? // When the fish was caught
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  auction      Auction?
+  bids         Bid[]
+  transaction  Transaction?
+
+  @@index([supplierId])
+  @@index([fishType])
+  @@index([status])
+  @@index([createdAt])
+  @@index([caughtAt])
+  @@map("catch_lots")
+}
+
+model Auction {
+  id          String        @id @default(cuid())
+  auctionNumber String      @unique // e.g., "AUC-20250901-001"
+  
+  // Lot reference
+  lotId       String        @unique
+  lot         CatchLot      @relation(fields: [lotId], references: [id])
+  
+  // Auction details
+  status      AuctionStatus @default(PENDING)
+  startPrice  Int           // Starting bid price in centavos
+  currentPrice Int?         // Current highest bid in centavos
+  winningBidId String?      @unique
+  winningBid  Bid?          @relation("WinningBid", fields: [winningBidId], references: [id])
+  
+  // Audit fields
+  createdBy     String?
+  createdByUser User?        @relation("AuctionCreatedBy", fields: [createdBy], references: [id])
+  updatedBy     String?
+  updatedByUser User?        @relation("AuctionUpdatedBy", fields: [updatedBy], references: [id])
+  
+  // Timing
+  startTime   DateTime?
+  endTime     DateTime?
+  duration    Int           @default(300) // Auction duration in seconds
+  
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  bids        Bid[]
+
+  @@index([status])
+  @@index([startTime])
+  @@index([createdAt])
+  @@map("auctions")
+}
+
+model Bid {
+  id        String   @id @default(cuid())
+  bidNumber String   @unique // e.g., "BID-20250901-001"
+  
+  // Auction reference
+  auctionId String
+  auction   Auction  @relation(fields: [auctionId], references: [id])
+  
+  // Lot reference
+  lotId     String
+  lot       CatchLot @relation(fields: [lotId], references: [id])
+  
+  // Bidder info
+  bidderId  String
+  bidder    Buyer    @relation(fields: [bidderId], references: [id])
+  buyerUserId String
+  buyerUser User     @relation("BuyerBids", fields: [buyerUserId], references: [id])
+  
+  // Bid details
+  amount    Int      // Bid amount in centavos
+  isWinning Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+
+  // Relations
+  winningAuction Auction? @relation("WinningBid")
+  transaction    Transaction?
+
+  @@index([auctionId])
+  @@index([lotId])
+  @@index([bidderId])
+  @@index([amount])
+  @@index([createdAt])
+  @@map("bids")
+}
+
+model Transaction {
+  id            String          @id @default(cuid())
+  transactionNumber String      @unique // e.g., "TXN-20250901-001"
+  
+  // References
+  lotId         String?         @unique
+  lot           CatchLot?       @relation(fields: [lotId], references: [id])
+  bidId         String?         @unique
+  bid           Bid?            @relation(fields: [bidId], references: [id])
+  userId        String          // User involved (supplier/buyer)
+  user          User            @relation(fields: [userId], references: [id])
+  
+  // Transaction details
+  type          TransactionType
+  amount        Int             // Amount in centavos (positive for income, negative for fees)
+  description   String?
+  
+  // Commission and fees (calculated at 6% commission + 2500 centavos labor fee)
+  saleAmount    Int?            // Original sale amount
+  commission    Int?            // 6% commission in centavos
+  laborFee      Int?            // Fixed 2500 centavos labor fee
+  netAmount     Int?            // Amount after fees
+  
+  // Audit fields
+  createdBy     String?
+  createdByUser User?           @relation("TransactionCreatedBy", fields: [createdBy], references: [id])
+  updatedBy     String?
+  updatedByUser User?           @relation("TransactionUpdatedBy", fields: [updatedBy], references: [id])
+  
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  settlement    Settlement?
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+model Settlement {
+  id            String           @id @default(cuid())
+  settlementNumber String        @unique // e.g., "SET-20250901-001"
+  
+  // User reference
+  userId        String
+  user          User             @relation(fields: [userId], references: [id])
+  
+  // Transaction reference
+  transactionId String           @unique
+  transaction   Transaction      @relation(fields: [transactionId], references: [id])
+  
+  // Settlement breakdown
+  grossAmount       Int           // Original sale amount in centavos
+  commissionCents   Int           // Commission amount (6%)
+  laborFeeCents     Int           // Labor fee (2500)
+  netToSupplierCents Int          // Amount to supplier after deductions
+  
+  // Settlement details
+  amount        Int              // Amount to be settled in centavos (same as netToSupplierCents)
+  status        SettlementStatus @default(PENDING)
+  paymentMethod String?          // "BANK_TRANSFER", "CASH", "CHECK"
+  reference     String?          // Bank reference or check number
+  notes         String?
+  
+  // Timing
+  scheduledAt   DateTime?        // When payment is scheduled
+  completedAt   DateTime?        // When payment was completed
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([createdAt])
+  @@map("settlements")
+}
+
+model DailyReport {
+  id              String   @id @default(cuid())
+  reportDate      DateTime @unique
+  
+  // User who generated the report
+  generatedBy     String
+  user            User     @relation(fields: [generatedBy], references: [id])
+  
+  // Summary statistics
+  totalAuctions   Int      @default(0)
+  totalLots       Int      @default(0)
+  totalBids       Int      @default(0)
+  totalRevenue    Int      @default(0) // Total revenue in centavos
+  totalCommission Int      @default(0) // Total commission earned in centavos
+  totalLaborFees  Int      @default(0) // Total labor fees in centavos
+  
+  // Fish statistics
+  totalWeight     Float    @default(0) // Total weight sold in kg
+  averagePrice    Int      @default(0) // Average price per kg in centavos
+  topFishType     String?  // Most sold fish type
+  
+  // Suppliers and buyers
+  activeSuppliers Int      @default(0)
+  activeBuyers    Int      @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([reportDate])
+  @@index([generatedBy])
+  @@index([createdAt])
+  @@map("daily_reports")
+}
+
+model AuditEvent {
+  id          String         @id @default(cuid())
+  eventId     String         @unique @default(cuid()) // Unique event identifier
+  
+  // Event details
+  eventType   AuditEventType
+  resource    String         // Table/entity affected (e.g., "lot", "auction", "transaction")
+  resourceId  String?        // ID of the affected resource
+  action      String         // Specific action performed
+  
+  // User context
+  performedBy     String?    // User who performed the action
+  performedByUser User?      @relation("AuditEventPerformedBy", fields: [performedBy], references: [id])
+  affectedUserId  String?    // User affected by the action (if different from performer)
+  affectedUser    User?      @relation("AuditEventAffectedUser", fields: [affectedUserId], references: [id])
+  
+  // Request context
+  requestId   String?        // Request ID from logger
+  ipAddress   String?        // IP address of the request
+  userAgent   String?        // User agent string
+  
+  // Event data
+  oldValues   Json?          // Previous state (for updates)
+  newValues   Json?          // New state (for creates/updates)
+  metadata    Json?          // Additional context data
+  
+  // Timestamps
+  timestamp   DateTime       @default(now())
+  
+  // Success/failure
+  success     Boolean        @default(true)
+  errorMessage String?       // Error message if action failed
+  
+  @@index([eventType])
+  @@index([resource])
+  @@index([resourceId])
+  @@index([performedBy])
+  @@index([affectedUserId])
+  @@index([timestamp])
+  @@index([success])
+  @@map("audit_events")
+}
