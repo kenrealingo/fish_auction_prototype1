@@ -161,9 +161,9 @@ export default async function MyBidsPage() {
   }
 
   const formatCurrency = (cents: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-PH', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'PHP'
     }).format(cents / 100)
   }
 

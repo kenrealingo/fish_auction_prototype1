@@ -52,8 +52,8 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   
   const mockMetrics: DashboardMetrics = {
     todayTransactions: 8,
-    todayGrossAmount: 345600, // $3,456.00
-    todayCommissions: 20736,  // $207.36 (6%)
+    todayGrossAmount: 345600, // ₱3,456.00
+    todayCommissions: 20736,  // ₱207.36 (6%)
     activeLots: 12,
     openAuctions: 3,
     pendingApprovals: 5
@@ -248,7 +248,7 @@ export async function getChartData(): Promise<ChartDataPoint[]> {
     const baseTransactions = 8
     const variation = Math.floor(Math.random() * 6) - 3 // -3 to +2
     const transactions = Math.max(1, baseTransactions + variation)
-    const avgRevenuePerTransaction = 45000 // $450
+    const avgRevenuePerTransaction = 45000 // ₱450
     const revenue = transactions * avgRevenuePerTransaction * (0.8 + Math.random() * 0.4) // 80% to 120%
     
     chartData.push({

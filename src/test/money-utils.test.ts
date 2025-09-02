@@ -41,31 +41,31 @@ describe('Money Utilities', () => {
 
   describe('calculateCommission', () => {
     it('should calculate 6% commission correctly', () => {
-      expect(calculateCommission(10000)).toBe(600) // $100 -> $6
-      expect(calculateCommission(50000)).toBe(3000) // $500 -> $30
+      expect(calculateCommission(10000)).toBe(600) // ₱100 -> ₱6
+      expect(calculateCommission(50000)).toBe(3000) // ₱500 -> ₱30
       expect(calculateCommission(0)).toBe(0)
     })
 
     it('should round commission to nearest cent', () => {
-      expect(calculateCommission(1000)).toBe(60) // $10 -> $0.60
-      expect(calculateCommission(1001)).toBe(60) // $10.01 -> $0.60 (rounds)
+      expect(calculateCommission(1000)).toBe(60) // ₱10 -> ₱0.60
+      expect(calculateCommission(1001)).toBe(60) // ₱10.01 -> ₱0.60 (rounds)
     })
   })
 
   describe('calculateLaborFee', () => {
-    it('should return fixed $25 labor fee', () => {
-      expect(calculateLaborFee()).toBe(2500) // $25 in centavos
+    it('should return fixed ₱25 labor fee', () => {
+      expect(calculateLaborFee()).toBe(2500) // ₱25 in centavos
     })
   })
 
   describe('calculateNetAmount', () => {
     it('should calculate net amount correctly', () => {
-      const gross = 10000 // $100
-      const commission = calculateCommission(gross) // $6 (600 centavos)
-      const labor = calculateLaborFee() // $25 (2500 centavos)
+      const gross = 10000 // ₱100
+      const commission = calculateCommission(gross) // ₱6 (600 centavos)
+      const labor = calculateLaborFee() // ₱25 (2500 centavos)
       const net = calculateNetAmount(gross, commission, labor)
       
-      expect(net).toBe(6900) // $100 - $6 - $25 = $69
+      expect(net).toBe(6900) // ₱100 - ₱6 - ₱25 = ₱69
     })
 
     it('should handle zero amounts', () => {
@@ -75,8 +75,8 @@ describe('Money Utilities', () => {
 
   describe('calculateLotValue', () => {
     it('should calculate lot value correctly', () => {
-      expect(calculateLotValue(10, 500)).toBe(5000) // 10kg * $5/kg = $50
-      expect(calculateLotValue(2.5, 1200)).toBe(3000) // 2.5kg * $12/kg = $30
+      expect(calculateLotValue(10, 500)).toBe(5000) // 10kg * ₱5/kg = ₱50
+      expect(calculateLotValue(2.5, 1200)).toBe(3000) // 2.5kg * ₱12/kg = ₱30
     })
 
     it('should round to nearest cent', () => {

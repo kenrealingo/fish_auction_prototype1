@@ -66,15 +66,15 @@ export async function getDailyReport(date: string): Promise<ActionResult & { dat
       // Mock data for today
       const mockSummary = {
         totalTransactions: 3,
-        totalGrossAmount: 150000, // $1,500.00
-        totalCommissions: 9000,   // $90.00 (6%)
-        totalLaborFees: 7500,     // $75.00 (3 x $25)
-        totalNetAmount: 133500,   // $1,335.00
+        totalGrossAmount: 150000, // ₱1,500.00
+        totalCommissions: 9000,   // ₱90.00 (6%)
+        totalLaborFees: 7500,     // ₱75.00 (3 x ₱25)
+        totalNetAmount: 133500,   // ₱1,335.00
         totalSettlements: 3,
         pendingSettlements: 2,
         completedSettlements: 1,
-        pendingAmount: 89000,     // $890.00
-        completedAmount: 44500    // $445.00
+        pendingAmount: 89000,     // ₱890.00
+        completedAmount: 44500    // ₱445.00
       }
 
       const mockTransactions = [
@@ -85,10 +85,10 @@ export async function getDailyReport(date: string): Promise<ActionResult & { dat
           fishType: "Atlantic Salmon",
           supplierName: "Atlantic Fisheries",
           buyerName: "Ocean Fresh Markets",
-          grossAmount: 67800,   // $678.00
-          commission: 4068,     // $40.68
-          laborFee: 2500,       // $25.00
-          netAmount: 61232,     // $612.32
+          grossAmount: 67800,   // ₱678.00
+          commission: 4068,     // ₱40.68
+          laborFee: 2500,       // ₱25.00
+          netAmount: 61232,     // ₱612.32
           createdAt: new Date().toISOString()
         },
         {
@@ -98,10 +98,10 @@ export async function getDailyReport(date: string): Promise<ActionResult & { dat
           fishType: "Red Snapper",
           supplierName: "Gulf Coast Fishing",
           buyerName: "Harbor Market Chain",
-          grossAmount: 45000,   // $450.00
-          commission: 2700,     // $27.00
-          laborFee: 2500,       // $25.00
-          netAmount: 39800,     // $398.00
+          grossAmount: 45000,   // ₱450.00
+          commission: 2700,     // ₱27.00
+          laborFee: 2500,       // ₱25.00
+          netAmount: 39800,     // ₱398.00
           createdAt: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
         },
         {
@@ -111,10 +111,10 @@ export async function getDailyReport(date: string): Promise<ActionResult & { dat
           fishType: "Yellowfin Tuna",
           supplierName: "Pacific Tuna Co.",
           buyerName: "Sushi Master Restaurant",
-          grossAmount: 37200,   // $372.00
-          commission: 2232,     // $22.32
-          laborFee: 2500,       // $25.00
-          netAmount: 32468,     // $324.68
+          grossAmount: 37200,   // ₱372.00
+          commission: 2232,     // ₱22.32
+          laborFee: 2500,       // ₱25.00
+          netAmount: 32468,     // ₱324.68
           createdAt: new Date(Date.now() - 7200000).toISOString() // 2 hours ago
         }
       ]

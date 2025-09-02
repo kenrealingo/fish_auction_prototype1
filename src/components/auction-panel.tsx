@@ -63,9 +63,9 @@ interface AuctionPanelProps {
 }
 
 const formatCurrency = (centavos: number) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-PH', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'PHP',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(centavos / 100)
@@ -391,7 +391,7 @@ export function AuctionPanel({ lot, userRole, isLotOwner }: AuctionPanelProps) {
               Place Your Bid
             </CardTitle>
             <CardDescription>
-              Minimum bid: {formatCurrency(auction.currentPrice + 500)} (current + $5.00)
+              Minimum bid: {formatCurrency(auction.currentPrice + 500)} (current + ₱5.00)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

@@ -77,8 +77,8 @@ const mockOpenAuctions: AuctionData[] = [
     id: "auction1",
     auctionNumber: "AUC-20250902-001",
     status: "ACTIVE",
-    startPrice: 140000, // $1400.00 in centavos
-    currentPrice: 165000, // $1650.00
+    startPrice: 140000, // ₱1400.00 in centavos
+    currentPrice: 165000, // ₱1650.00
     startTime: "2025-09-02T10:00:00",
     endTime: "2025-09-02T16:00:00",
     lot: {
@@ -123,8 +123,8 @@ const mockOpenAuctions: AuctionData[] = [
     id: "auction2",
     auctionNumber: "AUC-20250902-002",
     status: "ACTIVE",
-    startPrice: 89000, // $890.00
-    currentPrice: 95500, // $955.00
+    startPrice: 89000, // ₱890.00
+    currentPrice: 95500, // ₱955.00
     startTime: "2025-09-02T11:00:00",
     endTime: "2025-09-02T17:00:00",
     lot: {
@@ -156,9 +156,9 @@ const mockOpenAuctions: AuctionData[] = [
 ]
 
 const formatCurrency = (centavos: number) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-PH', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'PHP',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(centavos / 100)
@@ -188,7 +188,7 @@ function BidForm({ auction, onBidPlaced }: { auction: AuctionData, onBidPlaced: 
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
-  const minBid = auction.currentPrice + 500 // Minimum increment $5.00
+  const minBid = auction.currentPrice + 500 // Minimum increment ₱5.00
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

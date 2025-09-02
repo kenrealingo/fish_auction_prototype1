@@ -213,9 +213,9 @@ const getStatusColor = (status: string) => {
 }
 
 const formatCurrency = (centavos: number) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-PH', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'PHP',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(centavos / 100)

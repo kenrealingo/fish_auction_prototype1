@@ -342,7 +342,7 @@ export async function placeBid(auctionId: string, amount: number): Promise<Actio
       }
 
       // Check minimum bid amount
-      const minBidAmount = auction.currentPrice! + 500 // Minimum increment of $5.00
+      const minBidAmount = auction.currentPrice! + 500 // Minimum increment of ₱5.00
       if (amount < minBidAmount) {
         throw new Error(`Minimum bid amount is ${minBidAmount / 100}`)
       }
